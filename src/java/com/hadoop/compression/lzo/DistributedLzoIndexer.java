@@ -86,7 +86,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
       return 0;
     }
 
-    Configuration conf = new Configuration();
+    Configuration conf = getConf();
     Job job = new Job(conf);
     job.setJobName("Distributed Lzo Indexer " + Arrays.toString(args));
 
