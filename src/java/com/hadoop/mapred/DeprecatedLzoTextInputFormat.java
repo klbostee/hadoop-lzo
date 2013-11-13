@@ -100,7 +100,7 @@ public class DeprecatedLzoTextInputFormat extends TextInputFormat {
   protected boolean isSplitable(FileSystem fs, Path filename) {
     if (LzoInputFormatCommon.isLzoFile(filename.toString())) {
       LzoIndex index = indexes.get(filename);
-      return !index.isEmpty();
+      return index != null && !index.isEmpty();
     } else {
       // Delegate non-LZO files to the TextInputFormat base class.
       return super.isSplitable(fs, filename);
@@ -153,7 +153,34 @@ public class DeprecatedLzoTextInputFormat extends TextInputFormat {
   public RecordReader<LongWritable, Text> getRecordReader(InputSplit split,
       JobConf conf, Reporter reporter) throws IOException {
     FileSplit fileSplit = (FileSplit) split;
-    if (LzoInputFormatCommon.isLzoFile(fileSplit.getPath().toString())) {
+    if (LzoInputFormatCommon.isLzoIndexFile(fileSplit.getPath().toString())) {
+      // return dummy RecordReader when provider split is an index file
+      return new RecordReader<LongWritable, Text>() {
+
+        public LongWritable createKey() {
+          return new LongWritable();
+        }
+
+        public Text createValue() {
+          return new Text();
+        }
+
+        public boolean next(LongWritable key, Text value) throws IOException {
+          return false;
+        }
+
+        public float getProgress() throws IOException {
+          return 0.0f;
+        }
+
+        public synchronized long getPos() throws IOException {
+          return 0;
+        }
+
+        public synchronized void close() throws IOException {
+        }
+      };
+    } else if (LzoInputFormatCommon.isLzoFile(fileSplit.getPath().toString())) {
       reporter.setStatus(split.toString());
       return new DeprecatedLzoLineRecordReader(conf, (FileSplit)split);
     } else {
